@@ -1,3 +1,0 @@
-GT4500,3,0,1,0
-TORPEDO,SINGLE # fire primary
-TORPEDO,SINGLE # fire secondary
