@@ -1,0 +1,12 @@
+-------------------------------------------------------------------------------
+Test set: hu.bme.mit.spaceship.SystemTests
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.141 s - in hu.bme.mit.spaceship.SystemTests
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[1]  Time elapsed: 0.043 s
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[2]  Time elapsed: 0.016 s
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[3]  Time elapsed: 0.003 s
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[4]  Time elapsed: 0.003 s
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[5]  Time elapsed: 0.003 s
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[6]  Time elapsed: 0.003 s
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[7]  Time elapsed: 0.002 s
+hu.bme.mit.spaceship.SystemTests.runCommandsFromFile_Success(Path, Path)[8]  Time elapsed: 0.002 s

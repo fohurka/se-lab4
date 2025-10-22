@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommandLineInterface.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Coverage with JaCoCo and Maven</a> &gt; <a href="index.source.html" class="el_package">hu.bme.mit.spaceship</a> &gt; <span class="el_source">CommandLineInterface.java</span></div><h1>CommandLineInterface.java</h1><pre class="source lang-java linenums">package hu.bme.mit.spaceship;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
+import java.util.function.BiFunction;
+
+/**
+ * Minimal command line interface (CLI) to initialize and use spaceships.
+ */
+<span class="nc" id="L14">public class CommandLineInterface {</span>
+
+<span class="fc" id="L16">    private static Map&lt;String, Handler&gt; handlers = Map.of(</span>
+        &quot;HELP&quot;, CommandLineInterface::handleHelp,
+        &quot;GT4500&quot;, CommandLineInterface::handleGT4500,
+        &quot;TORPEDO&quot;, CommandLineInterface::handleTorpedo,
+        &quot;EXIT&quot;, CommandLineInterface::handleExit
+    );
+
+    public static void main(String[] args) {
+<span class="nc" id="L24">        run(System.in, System.out, new OptionalOutput(System.err));</span>
+<span class="nc" id="L25">    }</span>
+
+    /**
+     * Read and handle commands from an input stream, writing output to another stream.
+     * 
+     * The optional err stream receives output only useful in an interactive session.
+     * 
+     * @param in The input stream to read commands from
+     * @param out The output stream to write results to
+     * @param err Optional stream to write interactive session feedback to
+     */
+    public static void run(InputStream in, OutputStream out, OptionalOutput err) {
+<span class="fc" id="L37">        Context ctx = new Context();</span>
+<span class="fc" id="L38">        ctx.out = new PrintStream(out);</span>
+
+<span class="fc" id="L40">        err.println(&quot;Welcome to the console interface.  Available commands: &quot;</span>
+<span class="fc" id="L41">                + handlers.keySet().toString());</span>
+<span class="fc" id="L42">        try (Scanner scanner = new Scanner(in)) {</span>
+<span class="fc" id="L43">            CommandResult result = CommandResult.CONTINUE;</span>
+            do {
+<span class="fc" id="L45">                err.print(&quot;&gt; &quot;);</span>
+                try {
+<span class="fc" id="L47">                    result = handle(ctx, scanner.nextLine());</span>
+<span class="fc" id="L48">                } catch (NoSuchElementException e) {</span>
+<span class="fc" id="L49">                    result = CommandResult.EXIT;</span>
+<span class="fc" id="L50">                }</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            } while (result == CommandResult.CONTINUE);</span>
+        }
+<span class="fc" id="L53">    }</span>
+
+    public static void run(InputStream in, OutputStream out) {
+<span class="fc" id="L56">        run(in, out, new OptionalOutput(null));</span>
+<span class="fc" id="L57">    }</span>
+
+    /**
+     * Handle a command.
+     * 
+     * @param ctx The current CLI context
+     * @param command The command as a list of comma-separated tokens
+     * @return whether execution should continue
+     */
+    private static CommandResult handle(Context ctx, String command) {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (command.stripLeading().startsWith(&quot;#&quot;)) {</span>
+<span class="fc" id="L68">            return CommandResult.CONTINUE;</span>
+        }
+
+<span class="fc" id="L71">        command = command.replaceAll(&quot;#.*$&quot;, &quot;&quot;).strip();</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (command.isEmpty()) {</span>
+<span class="nc" id="L73">            return CommandResult.CONTINUE;</span>
+        }
+
+<span class="fc" id="L76">        String[] parts = command.split(&quot;,&quot;);</span>
+<span class="fc" id="L77">        String mainCommand = parts[0].toUpperCase();</span>
+
+<span class="fc" id="L79">        CommandResult result = CommandResult.CONTINUE;</span>
+        try {
+<span class="fc" id="L81">            Handler handler = handlers.get(mainCommand);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (handler == null) {</span>
+<span class="nc" id="L83">                ctx.out.printf(&quot;Unknown command: '%s'%n&quot;, mainCommand);</span>
+            } else {
+<span class="fc" id="L85">                result = handler.apply(ctx, parts);</span>
+            }
+<span class="nc" id="L87">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L88">            ctx.out.println(e.getLocalizedMessage());</span>
+<span class="fc" id="L89">        }</span>
+
+<span class="fc" id="L91">        return result;</span>
+    }
+
+    /**
+     * Handle the HELP command.
+     */
+    private static CommandResult handleHelp(Context ctx, String[] params) {
+<span class="nc" id="L98">        ctx.out.println(&quot;Available commands: &quot; + handlers.keySet());</span>
+<span class="nc" id="L99">        ctx.out.println(&quot;Generally, commands receive parameters; refer to the documentation&quot;);</span>
+<span class="nc" id="L100">        ctx.out.println(</span>
+                &quot;Before firing torpedoes using the TORPEDO command, you must initialize a ship (eg. a GT4500) using its name as a command&quot;);
+<span class="nc" id="L102">        return CommandResult.CONTINUE;</span>
+    }
+
+    /**
+     * Handle the GT4500 command.
+     */
+    private static CommandResult handleGT4500(Context ctx, String[] params) {
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (params.length != 5) {</span>
+<span class="nc" id="L110">            throw new IllegalArgumentException(</span>
+                    &quot;usage: GT4500,&lt;PRI_CNT&gt;,&lt;PRI_FAIL_RATE&gt;,&lt;SEC_CNT&gt;,&lt;SEC_FAIL_RATE&gt;&quot;);
+        }
+
+        int primaryCount;
+        int secondaryCount;
+        double primaryFailRate;
+        double secondaryFailRate;
+        try {
+<span class="fc" id="L119">            primaryCount = Integer.parseInt(params[1]);</span>
+<span class="fc" id="L120">            primaryFailRate = Double.parseDouble(params[2]);</span>
+<span class="fc" id="L121">            secondaryCount = Integer.parseInt(params[3]);</span>
+<span class="fc" id="L122">            secondaryFailRate = Double.parseDouble(params[4]);</span>
+<span class="nc" id="L123">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L124">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L125">                    &quot;Invalid numerical arguments passed: &quot; + e.getLocalizedMessage(), e);</span>
+<span class="fc" id="L126">        }</span>
+
+<span class="fc" id="L128">        ctx.ship = new GT4500(primaryCount, primaryFailRate, secondaryCount, secondaryFailRate);</span>
+<span class="fc" id="L129">        ctx.out.println(&quot;SUCCESS&quot;);</span>
+<span class="fc" id="L130">        return CommandResult.CONTINUE;</span>
+    }
+
+    /**
+     * Handle the TORPEDO command.
+     */
+    private static CommandResult handleTorpedo(Context ctx, String[] params) {
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (ctx.ship == null) {</span>
+<span class="nc" id="L138">            throw new IllegalArgumentException(&quot;No ship has been initialized&quot;);</span>
+        }
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        if (params.length != 2) {</span>
+<span class="nc" id="L141">            throw new IllegalArgumentException(&quot;usage: TORPEDO,&lt;SINGLE|ALL&gt;&quot;);</span>
+        }
+
+        FiringMode firingMode;
+        try {
+<span class="fc" id="L146">            firingMode = FiringMode.valueOf(params[1].toUpperCase());</span>
+<span class="nc" id="L147">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L148">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L149">                    String.format(&quot;Unknown firing mode: '%s'&quot;, params[1].toUpperCase()), e);</span>
+<span class="fc" id="L150">        }</span>
+<span class="fc" id="L151">        boolean success = ctx.ship.fireTorpedo(firingMode);</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        ctx.out.println(success ? &quot;SUCCESS&quot; : &quot;FAIL&quot;);</span>
+<span class="fc" id="L153">        return CommandResult.CONTINUE;</span>
+    }
+
+    /**
+     * Handle the EXIT command.
+     */
+    private static CommandResult handleExit(Context ctx, String[] params) {
+<span class="nc" id="L160">        return CommandResult.EXIT;</span>
+    }
+
+    private static class Context {
+        SpaceShip ship;
+        PrintStream out;
+    }
+
+    private static interface Handler extends BiFunction&lt;Context, String[], CommandResult&gt; {}
+
+    /**
+     * Rudimentary PrintStream-like interface that silently ignores if the underlying PrintStream is
+     * null.
+     */
+    private static class OptionalOutput {
+
+        private PrintStream out;
+
+<span class="fc" id="L178">        OptionalOutput(OutputStream out) {</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">            if (out != null) {</span>
+<span class="nc" id="L180">                this.out = new PrintStream(out);</span>
+            }
+<span class="fc" id="L182">        }</span>
+
+        public void print(String message) {
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">            if (out != null) {</span>
+<span class="nc" id="L186">                out.print(message);</span>
+            }
+<span class="fc" id="L188">        }</span>
+
+        public void println(String message) {
+<span class="fc" id="L191">            print(message + &quot;\n&quot;);</span>
+<span class="fc" id="L192">        }</span>
+    }
+
+    /**
+     * More readable enumeration for command results.
+     */
+<span class="fc" id="L198">    private enum CommandResult {</span>
+<span class="fc" id="L199">        CONTINUE, EXIT</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
